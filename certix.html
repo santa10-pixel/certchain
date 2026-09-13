@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CertiX — Intelligent, Private, Resilient Academic Credentials</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{
+    --ink:#0B1221; --ink-2:#141F32; --ink-3:#1C2B45;
+    --hairline:rgba(201,162,75,0.25); --gold:#C9A24B; --gold-soft:rgba(201,162,75,0.12);
+    --paper:#F4F1E7; --ash:#9BA3B5;
+    --valid:#4CAF7D; --modified:#E2574C; --revoked:#B23A48; --notfound:#6B7280; --superseded:#E8A838; --info:#3B82F6;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--ink); color:#E9EAF0; font-family:var(--sans);
+    min-height:100vh; overflow-x:hidden;
+  }
+  .app-container { display: flex; height: 100vh; }
+  
+  /* Sidebar */
+  .sidebar { width: 260px; background: var(--ink-2); border-right: 1px solid var(--hairline); display: flex; flex-direction: column; padding: 20px 0; }
+  .brand { padding: 0 20px 30px; display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 36px; height: 36px; }
+  .brand h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; }
+  .brand p { margin: 4px 0 0; font-size: 11px; color: var(--ash); }
+  
+  .nav-group { margin-bottom: 24px; }
+  .nav-title { padding: 0 24px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ash); margin-bottom: 8px; font-weight: 700; }
+  .nav-item { padding: 10px 24px; font-size: 14px; color: #D1D5DB; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--ink-3); color: #FFF; }
+  .nav-item.active { background: var(--ink-3); color: var(--gold); border-left-color: var(--gold); font-weight: 600; }
+  
+  /* Main Content */
+  .main-content { flex: 1; overflow-y: auto; padding: 40px; }
+  .view-section { display: none; max-width: 1000px; margin: 0 auto; animation: fade .3s ease; }
+  .view-section.active { display: block; }
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+  h2.page-title { margin: 0 0 24px; font-size: 24px; font-weight: 600; }
+  
+  /* Cards & Forms */
+  .card { background: var(--ink-2); border: 1px solid var(--hairline); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .card-header { margin-bottom: 16px; }
+  .card-header h3 { margin: 0 0 4px; font-size: 18px; }
+  .card-header p { margin: 0; font-size: 13px; color: var(--ash); }
+  
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--ash); margin-bottom: 6px; margin-top: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+  label:first-child { margin-top: 0; }
+  input, textarea, select { width: 100%; background: var(--ink); border: 1px solid var(--hairline); border-radius: 8px; color: #FFF; padding: 12px 14px; font-family: var(--sans); font-size: 14px; }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--gold); }
+  textarea { resize: vertical; min-height: 80px; }
+  
+  /* Buttons */
+  .btn { appearance: none; border: none; border-radius: 8px; padding: 12px 20px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover { background: #DDB65F; }
+  .btn-ghost { background: transparent; border: 1px solid var(--hairline); color: #FFF; }
+  .btn-ghost:hover { border-color: var(--gold); }
+  .btn-danger { background: rgba(178,58,72,0.15); border: 1px solid rgba(178,58,72,0.5); color: #E98A93; }
+  .btn-danger:hover { background: rgba(178,58,72,0.3); }
+  .btn-small { padding: 6px 12px; font-size: 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center; }
+  
+  /* Banners */
+  .banner { display: flex; gap: 12px; background: var(--gold-soft); border: 1px solid var(--hairline); border-radius: 8px; padding: 16px; font-size: 13.5px; color: #E9DDBB; margin-bottom: 20px; align-items: flex-start; }
+  .banner.danger { background: rgba(178,58,72,0.1); border-color: rgba(178,58,72,0.5); color: #E98A93; }
+  .banner.info { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.5); color: #93C5FD; }
+  .banner svg { width: 20px; height: 20px; flex: none; margin-top: 2px; }
+  
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+  th { padding: 12px; border-bottom: 1px solid var(--hairline); color: var(--ash); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+  td { padding: 14px 12px; border-bottom: 1px solid var(--ink-3); vertical-align: top; }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+  
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 99px; letter-spacing: 0.02em; }
+  .badge.valid { background: rgba(76,175,125,0.15); color: var(--valid); }
+  .badge.revoked { background: rgba(178,58,72,0.15); color: var(--revoked); }
+  .badge.modified { background: rgba(226,87,76,0.15); color: var(--modified); }
+  .badge.superseded { background: rgba(232,168,56,0.15); color: var(--superseded); }
+  .badge.emergency { background: rgba(76,175,125,0.25); color: var(--valid); border: 1px solid var(--valid); }
+  .badge.expired { background: rgba(107,114,128,0.2); color: var(--notfound); }
+  
+  /* Key/Value display */
+  .keyfact { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--ink-3); font-size: 13.5px; }
+  .keyfact:last-child { border-bottom: none; }
+  .keyfact .k { color: var(--ash); }
+  .keyfact .v { font-weight: 500; text-align: right; max-width: 65%; word-break: break-word; }
+  
+  /* Score Widget */
+  .score-widget { text-align: center; padding: 20px; background: var(--ink); border-radius: 12px; border: 1px solid var(--hairline); }
+  .score-widget .val { font-size: 36px; font-weight: 700; margin: 10px 0; }
+  .score-widget .val.high { color: var(--valid); }
+  .score-widget .val.med { color: var(--superseded); }
+  .score-widget .val.low { color: var(--modified); }
+  
+  /* Checkboxes */
+  .checkbox-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+  .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; }
+  .checkbox-item input { width: auto; accent-color: var(--gold); width: 18px; height: 18px; cursor: pointer; }
+  
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--ink-2); border: 1px solid var(--gold); border-radius: 16px; width: 100%; max-width: 500px; padding: 30px; max-height: 90vh; overflow-y: auto; }
+  
+  /* QR Container */
+  #qrbox { background: #FFF; padding: 16px; border-radius: 12px; display: inline-block; }
+  
+  /* Dashboard Stats */
+  .stat-card { background: var(--ink); border: 1px solid var(--hairline); border-radius: 12px; padding: 20px; }
+  .stat-card .label { font-size: 12px; color: var(--ash); text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: #FFF; }
+  
+  /* Toasts */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 12px; }
+  .toast { background: var(--ink-3); border-left: 4px solid var(--gold); padding: 16px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 14px; font-weight: 500; color: #FFF; animation: slideIn 0.3s forwards; }
+  @keyframes slideIn { from{transform:translateX(100%);opacity:0;} to{transform:none;opacity:1;} }
+  
+  .timeline { border-left: 2px solid var(--ink-3); margin-left: 10px; padding-left: 20px; }
+  .timeline-item { position: relative; padding-bottom: 24px; }
+  .timeline-item::before { content: ''; position: absolute; left: -27px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--ink-2); border: 2px solid var(--gold); }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-date { font-size: 12px; color: var(--ash); margin-bottom: 4px; }
+  .timeline-content { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#C9A24B" stroke-width="2"/><path d="M12 20h16M20 12v16" stroke="#C9A24B" stroke-width="2" opacity="0.5"/><path d="M20 10l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z" fill="#C9A24B"/></svg>
+      <div>
+        <h1>CertiX</h1>
+        <p>Intelligent • Private • Resilient</p>
+      </div>
+    </div>
+    
+    <div class="nav-group">
+      <div class="nav-title">University / Issuer</div>
+      <div class="nav-item active" data-target="view-uni-dashboard">Hub Dashboard</div>
+      <div class="nav-item" data-target="view-uni-issue">Issue Credential</div>
+    </div>
+    
+    <div class="nav-group">
+      <div class="nav-title">Student</div>
+      <div class="nav-item" data-target="view-stu-wallet">My Wallet</div>
+      <div class="nav-item" data-target="view-stu-passport">Academic Passport</div>
+      <div class="nav-item" data-target="view-stu-consent">Consent Center</div>
+    </div>
+    
+    <div class="nav-group">
+      <div class="nav-title">Employer / Verifier</div>
+      <div class="nav-item" data-target="view-emp-verify">Verification Portal</div>
+      <div class="nav-item" data-target="view-emp-match">Candidate Matching</div>
+    </div>
+    
+    <div class="nav-group">
+      <div class="nav-title">System Admin</div>
+      <div class="nav-item" data-target="view-adm-security">Security Center</div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- UNIVERSITY: Dashboard -->
+    <section id="view-uni-dashboard" class="view-section active">
+      <h2 class="page-title">University Hub Dashboard</h2>
+      
+      <div class="banner info" id="uniLoginGate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+          <b>Simulated Session active.</b> You are logged in as <b>VIT Chennai</b>. The local ECDSA keys have been generated in memory for this session.
+        </div>
+      </div>
+
+      <div class="grid3" style="margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="label">Credentials Issued</div>
+          <div class="value" id="stat-uni-issued">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Active Credentials</div>
+          <div class="value" id="stat-uni-active">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Revocations</div>
+          <div class="value" id="stat-uni-revoked">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Issued Credentials Ledger</h3>
+          <p>Manage lifecycle states (Update, Supersede, Revoke).</p>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="uniLedgerTable">
+            <thead>
+              <tr><th>Credential ID</th><th>Student</th><th>Status</th><th>Type</th><th>Actions</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- UNIVERSITY: Issue -->
+    <section id="view-uni-issue" class="view-section">
+      <h2 class="page-title" id="issuePageTitle">Issue New Credential</h2>
+      <div class="card">
+        <div class="card-header">
+          <h3>Credential Details</h3>
+          <p>Sensitive data is salted and hashed per field to enable selective disclosure.</p>
+        </div>
+        
+        <div class="grid2">
+          <div><label>Student Name</label><input type="text" id="f_name" placeholder="e.g. Santhosh R"></div>
+          <div><label>Registration Number</label><input type="text" id="f_sid" placeholder="e.g. 25BCE5672"></div>
+          <div><label>Credential Type</label>
+            <select id="f_type">
+              <option value="Degree">Degree</option>
+              <option value="Certification">Certification</option>
+              <option value="Internship">Internship</option>
+            </select>
+          </div>
+          <div><label>Program / Title</label><input type="text" id="f_title" placeholder="e.g. B.Tech Computer Science"></div>
+          <div><label>Graduation/Completion Year</label><input type="text" id="f_year" placeholder="e.g. 2026"></div>
+          <div><label>Score / CGPA</label><input type="text" id="f_score" placeholder="e.g. 9.12"></div>
+          <div><label>Verified Skills (comma separated)</label><input type="text" id="f_skills" placeholder="e.g. Java, Python, Blockchain"></div>
+          <div><label>Expiry Date (Optional)</label><input type="date" id="f_expiry"></div>
+        </div>
+        
+        <div class="row">
+          <button class="btn btn-gold" id="btnIssue">Sign & Issue on Blockchain</button>
+          <button class="btn btn-ghost" id="btnCancelUpdate" style="display:none;">Cancel Update</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENT: Wallet -->
+    <section id="view-stu-wallet" class="view-section">
+      <h2 class="page-title">My Credential Wallet</h2>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>Add to Wallet</h3>
+          <p>Enter the Credential ID and Access Code provided by your institution.</p>
+        </div>
+        <div class="grid2">
+          <div><label>Credential ID</label><input type="text" id="w_certId"></div>
+          <div><label>Access Code</label><input type="text" id="w_code"></div>
+        </div>
+        <div class="row"><button class="btn btn-ghost" id="btnAddToWallet">Import Credential</button></div>
+      </div>
+
+      <div class="card-header" style="margin-top:32px;">
+        <h3>My Verifiable Credentials</h3>
+      </div>
+      <div id="walletList" style="display:grid; grid-template-columns:1fr; gap:16px;">
+        <div style="color:var(--ash); font-size:14px;">No credentials in wallet yet.</div>
+      </div>
+    </section>
+
+    <!-- STUDENT: Passport -->
+    <section id="view-stu-passport" class="view-section">
+      <h2 class="page-title">Digital Academic Passport</h2>
+      <div class="banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 3.5v5c0 5-3 8.5-7 11.5-4-3-7-6.5-7-11.5v-5L12 2z"/></svg>
+        <div>This passport dynamically summarizes all your verified credentials and skills into one verified identity.</div>
+      </div>
+      
+      <div class="grid2">
+        <div class="card">
+          <div class="card-header"><h3>Verified Degrees & Certifications</h3></div>
+          <div id="passDegrees" class="timeline" style="margin-left:0; padding-left:15px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Verified Skills Engine</h3></div>
+          <div id="passSkills" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENT: Consent Center -->
+    <section id="view-stu-consent" class="view-section">
+      <h2 class="page-title">Consent Center</h2>
+      <p style="color:var(--ash); margin-bottom:24px;">Manage active sharing sessions and employer access. You can revoke access at any time.</p>
+      
+      <div class="card">
+        <div style="overflow-x:auto;">
+          <table id="consentTable">
+            <thead>
+              <tr><th>Session ID</th><th>Credential</th><th>Claims Disclosed</th><th>Expires</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- EMPLOYER: Verifier Portal -->
+    <section id="view-emp-verify" class="view-section">
+      <h2 class="page-title">Employer Verification Portal</h2>
+      
+      <div class="banner info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+          <b>Simulated App Behavior:</b> In production, you would scan a QR code with a phone, which opens this URL automatically. For this demo, clicking "Generate Share Link" in the Student Wallet will auto-populate this page.
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h3>Verification Settings</h3>
+        </div>
+        <div class="row" style="margin-top:0;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; text-transform:none;">
+            <input type="checkbox" id="empSimOutage"> Simulate University Server Outage (Emergency Mode)
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin:0; text-transform:none;">
+            <input type="checkbox" id="empSimOffline"> Simulate Completely Offline (Local Signature Check)
+          </label>
+        </div>
+      </div>
+
+      <div class="card" id="verInputCard">
+        <div class="card-header">
+          <h3>Manual Session Input</h3>
+          <p>If not using auto-routing, paste the Secure Session URL or Payload here.</p>
+        </div>
+        <textarea id="v_payload" placeholder="Paste payload or URL..."></textarea>
+        <div class="row">
+          <button class="btn btn-gold" id="btnVerify">Verify Credential</button>
+          <button class="btn btn-ghost" id="btnTamper">Tamper Payload (Test Fraud)</button>
+          <button class="btn btn-ghost" id="btnReplay">Simulate Replay Attack</button>
+        </div>
+      </div>
+
+      <div id="verResultArea"></div>
+    </section>
+
+    <!-- EMPLOYER: Matching -->
+    <section id="view-emp-match" class="view-section">
+      <h2 class="page-title">Candidate Skill Matching</h2>
+      <div class="card">
+        <div class="card-header">
+          <h3>Define Job Requirements</h3>
+          <p>CertiX AI will evaluate the candidate's verified credential portfolio against these requirements.</p>
+        </div>
+        <div class="grid2">
+          <div><label>Required Skills (comma separated)</label><input type="text" id="m_skills" value="Java, Python"></div>
+          <div><label>Minimum Score / CGPA</label><input type="text" id="m_cgpa" value="8.0"></div>
+          <div style="grid-column:1/-1;"><label>Candidate Session Payload</label><textarea id="m_payload" style="min-height:50px;"></textarea></div>
+        </div>
+        <div class="row"><button class="btn btn-gold" id="btnMatch">Evaluate Candidate</button></div>
+      </div>
+      <div id="matchResultArea"></div>
+    </section>
+
+    <!-- ADMIN: Security Center -->
+    <section id="view-adm-security" class="view-section">
+      <h2 class="page-title">Security & Audit Center</h2>
+      
+      <div class="grid3" style="margin-bottom:24px;">
+        <div class="stat-card" style="border-color:var(--gold);">
+          <div class="label">AI System Health</div>
+          <div class="value" style="color:var(--gold);">SECURE</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Verifications</div>
+          <div class="value" id="stat-adm-ver">0</div>
+        </div>
+        <div class="stat-card" style="border-color:rgba(178,58,72,0.5);">
+          <div class="label">Anomalies Detected</div>
+          <div class="value" style="color:#E98A93;" id="stat-adm-anom">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Global Blockchain Audit Trail</h3>
+          <p>Immutable log of all ecosystem events.</p>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="auditTable">
+            <thead>
+              <tr><th>Timestamp</th><th>Event</th><th>Credential ID</th><th>Actor / Detail</th><th>Risk</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Modals -->
+
+<!-- Share Modal (Student) -->
+<div class="modal-overlay" id="modalShare">
+  <div class="modal">
+    <h3 style="margin-top:0;">Selective Disclosure & Sharing</h3>
+    <p style="color:var(--ash); font-size:13px;">Choose what claims to share. Unselected claims are protected by cryptographic hashing.</p>
+    
+    <div class="grid2">
+      <div>
+        <div class="checkbox-list" id="shareCheckboxes"></div>
+      </div>
+      <div class="score-widget">
+        <div style="font-size:11px; color:var(--ash); font-weight:600; text-transform:uppercase;">Privacy Exposure Score</div>
+        <div class="val" id="shareScore">0/100</div>
+        <div style="font-size:12px; color:var(--ash);" id="shareScoreText"></div>
+      </div>
+    </div>
+    
+    <label>Access Duration (Hours)</label>
+    <select id="shareExpiry">
+      <option value="1">1 Hour</option>
+      <option value="24" selected>24 Hours</option>
+      <option value="72">72 Hours</option>
+    </select>
+    
+    <div class="row" style="margin-top:24px;">
+      <button class="btn btn-gold" id="btnGenLink">Generate Secure Link</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalShare').classList.remove('active')">Cancel</button>
+    </div>
+    
+    <div id="qrResult" style="display:none; margin-top:24px; text-align:center; padding-top:20px; border-top:1px solid var(--hairline);">
+      <div id="qrbox"></div>
+      <p style="margin-top:16px; font-size:13px; color:var(--gold);"><b>Link copied & Auto-routed to Verifier Portal!</b></p>
+      <p style="font-size:12px; color:var(--ash);">In real life, the employer scans this QR with their phone to instantly verify.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window.SUPABASE_CONFIG = {
+    URL: 'https://vhheapmdpaixpcgluhqd.supabase.co',
+    KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZoaGVhcG1kcGFpeHBjZ2x1aHFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MTYxNzUsImV4cCI6MjA5MTM5MjE3NX0.7Ncwx_DJUVsMGnIbBV8kIqtjO7KsJg3mXLM758rpwiQ'
+};
+</script>
+<script>
+/**
+ * CERTiX - Core Logic
+ */
+
+// --- UTILS ---
+const $ = id => document.getElementById(id);
+const enc = new TextEncoder();
+const toHex = buf => [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const b64ToBuf = b64 => { const bin=atob(b64); const arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return arr.buffer; };
+const sha256 = async str => toHex(await crypto.subtle.digest('SHA-256', enc.encode(str)));
+const generateId = (prefix) => prefix + '-' + Math.random().toString(36).slice(2,9).toUpperCase();
+
+function toast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if(type==='error') t.style.borderLeftColor = 'var(--modified)';
+  if(type==='success') t.style.borderLeftColor = 'var(--valid)';
+  t.textContent = msg;
+  $('toastContainer').appendChild(t);
+  setTimeout(() => { t.style.opacity=0; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// --- STATE & DATA MODEL ---
+// Represents the global ecosystem
+const DB = {
+  chain: [], // { certId, rootHash, issuer, ts, status, version, supersededBy, expiry, signature }
+  offChain: {}, // { certId: { record:{...}, salts:{...}, hashes:{...}, accessCode } }
+  audit: [], // { ts, event, certId, actor, detail, risk }
+  wallet: [], // certId list for current student
+  consents: {}, // sessionId -> { certId, claims, expiresAt, nonce, used, revoked }
+  stats: { verifications: 0, anomalies: 0 }
+};
+
+let supabaseClient = null;
+
+async function initSupabase() {
+  if (window.SUPABASE_CONFIG) {
+    supabaseClient = supabase.createClient(window.SUPABASE_CONFIG.URL, window.SUPABASE_CONFIG.KEY);
+    try {
+      const { data, error } = await supabaseClient.from('certix_state').select('state').eq('id', 'global').single();
+      if (data && data.state) {
+        Object.assign(DB, data.state);
+        
+        // Rehydrate sets and complex structures if needed
+        if (data.state.usedNonces) DB.usedNonces = new Set(data.state.usedNonces);
+        else DB.usedNonces = new Set();
+      } else {
+        DB.usedNonces = new Set();
+        await supabaseClient.from('certix_state').insert({ id: 'global', state: { ...DB, usedNonces: Array.from(DB.usedNonces) } });
+      }
+    } catch (err) {
+      console.error("Supabase init error:", err);
+      toast("Could not load database. Using local memory.", "error");
+      DB.usedNonces = new Set();
+    }
+  } else {
+    DB.usedNonces = new Set();
+  }
+}
+
+async function syncState() {
+  if (!supabaseClient) return;
+  const stateToSave = { ...DB, usedNonces: Array.from(DB.usedNonces) };
+  await supabaseClient.from('certix_state').update({ state: stateToSave, updated_at: new Date() }).eq('id', 'global');
+}
+
+// Cryptographic Keys (Simulated HSM for University)
+let uniPrivKey, uniPubKey, uniJwk;
+const ISSUER_ID = 'VIT Chennai';
+
+async function initCrypto() {
+  const pair = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']);
+  uniPubKey = pair.publicKey;
+  uniJwk = await crypto.subtle.exportKey('jwk', uniPubKey);
+  uniPrivKey = pair.privateKey;
+}
+
+function logAudit(event, certId, actor, detail='', risk='LOW') {
+  DB.audit.push({ ts: Date.now(), event, certId, actor, detail, risk });
+  if (risk === 'HIGH') DB.stats.anomalies++;
+  renderAdmin();
+  syncState();
+}
+
+// Fields in a credential and privacy score weights
+const CLAIM_DEF = {
+  name: { label: 'Full Name', weight: 25 },
+  sid: { label: 'Reg Number', weight: 20 },
+  type: { label: 'Credential Type', weight: 5 },
+  title: { label: 'Program/Title', weight: 5 },
+  year: { label: 'Completion Year', weight: 5 },
+  score: { label: 'Score/CGPA', weight: 15 },
+  skills: { label: 'Verified Skills', weight: 10 },
+  eligibility: { label: 'Eligibility (Score >= 8.0)', weight: 15 } // Derived claim
+};
+const CLAIM_KEYS = Object.keys(CLAIM_DEF);
+
+// --- NAVIGATION ---
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    $(el.dataset.target).classList.add('active');
+    
+    // Auto refresh data on view entry
+    if(el.dataset.target === 'view-stu-wallet') renderWallet();
+    if(el.dataset.target === 'view-stu-passport') renderPassport();
+    if(el.dataset.target === 'view-stu-consent') renderConsents();
+  });
+});
+
+// --- 1. UNIVERSITY HUB ---
+
+let updateTargetId = null;
+
+$('btnIssue').addEventListener('click', async () => {
+  const record = {
+    name: $('f_name').value.trim(), sid: $('f_sid').value.trim(), type: $('f_type').value,
+    title: $('f_title').value.trim(), year: $('f_year').value.trim(), score: $('f_score').value.trim(),
+    skills: $('f_skills').value.trim(),
+    eligibility: (parseFloat($('f_score').value) >= 8.0) ? 'TRUE' : 'FALSE'
+  };
+  
+  if(!record.name || !record.title) return toast('Missing required fields', 'error');
+
+  const expiryInput = $('f_expiry').value;
+  const expiryTs = expiryInput ? new Date(expiryInput).getTime() : null;
+
+  const id = generateId('CERT');
+  const ts = Date.now();
+  
+  // Create cryptographic hashes for selective disclosure
+  const salts = {}; const hashes = {}; let combined = "";
+  for(let k of CLAIM_KEYS) {
+    salts[k] = generateId('S');
+    const h = await sha256(record[k] + salts[k]);
+    hashes[k] = h; combined += h;
+  }
+  const rootHash = await sha256(combined);
+
+  // Check for duplicate document hash (AI Anomaly Detection)
+  const isDuplicate = DB.chain.some(c => c.rootHash === rootHash && c.status !== 'revoked');
+  if(isDuplicate && !updateTargetId) {
+    logAudit('DUPLICATE_DETECTED', id, ISSUER_ID, 'Attempted to issue duplicate credential hash', 'HIGH');
+    return toast('Duplicate credential detected by AI Engine!', 'error');
+  }
+
+  // Sign the root hash
+  const sigBuf = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, uniPrivKey, enc.encode(rootHash));
+  const signature = toB64(sigBuf);
+
+  let version = 1;
+  if(updateTargetId) {
+    const old = DB.chain.find(c => c.certId === updateTargetId);
+    old.status = 'superseded';
+    old.supersededBy = id;
+    version = old.version + 1;
+    logAudit('SUPERSEDED', old.certId, ISSUER_ID, `Replaced by ${id}`);
+  }
+
+  DB.chain.push({ certId:id, rootHash, issuer:ISSUER_ID, ts, status:'valid', version, supersededBy:null, expiry:expiryTs, signature });
+  DB.offChain[id] = { record, salts, hashes, accessCode: generateId('AC') };
+  
+  logAudit(updateTargetId ? 'UPDATED' : 'ISSUED', id, ISSUER_ID);
+  
+  toast(`Credential ${updateTargetId?'Updated':'Issued'} Successfully! ID: ${id}`, 'success');
+  
+  // Show handoff info
+  alert(`HANDOFF TO STUDENT:\nCredential ID: ${id}\nAccess Code: ${DB.offChain[id].accessCode}`);
+  
+  resetIssueForm();
+  renderUniDashboard();
+});
+
+$('btnCancelUpdate').addEventListener('click', resetIssueForm);
+
+function resetIssueForm() {
+  updateTargetId = null;
+  $('issuePageTitle').textContent = 'Issue New Credential';
+  $('btnIssue').textContent = 'Sign & Issue on Blockchain';
+  $('btnCancelUpdate').style.display = 'none';
+  ['f_name','f_sid','f_title','f_year','f_score','f_skills','f_expiry'].forEach(id => $(id).value = '');
+}
+
+function renderUniDashboard() {
+  $('stat-uni-issued').textContent = DB.chain.length;
+  $('stat-uni-active').textContent = DB.chain.filter(c=>c.status==='valid').length;
+  $('stat-uni-revoked').textContent = DB.chain.filter(c=>c.status==='revoked').length;
+  
+  const tb = document.querySelector('#uniLedgerTable tbody');
+  tb.innerHTML = '';
+  [...DB.chain].reverse().forEach(c => {
+    const rec = DB.offChain[c.certId]?.record;
+    let act = '';
+    if (c.status === 'valid') {
+      act = `<button class="btn btn-ghost btn-small" onclick="initUpdate('${c.certId}')" style="margin-right:4px;">Update</button>
+             <button class="btn btn-danger btn-small" onclick="revokeCert('${c.certId}')">Revoke</button>`;
+    }
+    tb.innerHTML += `<tr>
+      <td class="mono">${c.certId} <span style="color:var(--ash);font-size:11px;">v${c.version}</span></td>
+      <td>${rec ? rec.name : 'Unknown'}</td>
+      <td>${badge(c.status)}</td>
+      <td>${rec ? rec.type : '-'}</td>
+      <td>${act}</td>
+    </tr>`;
+  });
+}
+
+window.initUpdate = (id) => {
+  updateTargetId = id;
+  const old = DB.offChain[id].record;
+  $('issuePageTitle').textContent = `Update Credential (Supersede ${id})`;
+  $('btnIssue').textContent = 'Supersede & Issue Next Version';
+  $('btnCancelUpdate').style.display = 'inline-flex';
+  
+  $('f_name').value = old.name; $('f_sid').value = old.sid; $('f_type').value = old.type;
+  $('f_title').value = old.title; $('f_year').value = old.year; $('f_score').value = old.score;
+  $('f_skills').value = old.skills;
+  
+  document.querySelector('[data-target="view-uni-issue"]').click(); // switch tab
+};
+
+window.revokeCert = (id) => {
+  if(!confirm(`Revoke ${id}? This cannot be undone.`)) return;
+  const c = DB.chain.find(x => x.certId === id);
+  c.status = 'revoked';
+  logAudit('REVOKED', id, ISSUER_ID, 'Institution revoked credential');
+  renderUniDashboard();
+  toast('Credential Revoked', 'success');
+};
+
+
+// --- 2. STUDENT WALLET & PASSPORT ---
+
+$('btnAddToWallet').addEventListener('click', () => {
+  const id = $('w_certId').value.trim();
+  const code = $('w_code').value.trim();
+  const oc = DB.offChain[id];
+  if(oc && oc.accessCode === code) {
+    if(!DB.wallet.includes(id)) {
+      DB.wallet.push(id);
+      logAudit('WALLET_IMPORT', id, oc.record.name);
+      toast('Credential added to Wallet!', 'success');
+      $('w_certId').value = ''; $('w_code').value = '';
+      renderWallet();
+    } else toast('Already in wallet.');
+  } else toast('Invalid ID or Access Code', 'error');
+});
+
+function renderWallet() {
+  const wl = $('walletList');
+  wl.innerHTML = '';
+  if(DB.wallet.length === 0) { wl.innerHTML = '<div style="color:var(--ash);">Wallet is empty.</div>'; return; }
+  
+  DB.wallet.forEach(id => {
+    const oc = DB.offChain[id];
+    const chainC = DB.chain.find(c=>c.certId===id);
+    wl.innerHTML += `
+      <div class="card" style="margin:0; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+            <h3 style="margin:0;">${oc.record.title}</h3>
+            ${badge(chainC.status)}
+            ${chainC.expiry && chainC.expiry < Date.now() ? badge('expired') : ''}
+          </div>
+          <div style="font-size:13px; color:var(--ash);">${oc.record.type} · Issued by ${chainC.issuer} · v${chainC.version}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" onclick="openShareModal('${id}')">Generate Share Link</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function renderPassport() {
+  const pDeg = $('passDegrees'); const pSkl = $('passSkills');
+  pDeg.innerHTML = ''; pSkl.innerHTML = '';
+  
+  let validCount = 0;
+  const skillsSet = new Set();
+  
+  DB.wallet.forEach(id => {
+    const chainC = DB.chain.find(c=>c.certId===id);
+    if(chainC.status !== 'valid' && chainC.status !== 'superseded') return;
+    validCount++;
+    const r = DB.offChain[id].record;
+    pDeg.innerHTML += `<div class="timeline-item">
+      <div class="timeline-date">${new Date(chainC.ts).toLocaleDateString()}</div>
+      <div class="timeline-content"><b>${r.title}</b><br><span style="color:var(--ash);font-size:12px;">${chainC.issuer}</span></div>
+    </div>`;
+    
+    if(r.skills) {
+      r.skills.split(',').map(s=>s.trim()).forEach(s => {
+        if(s) skillsSet.add(s);
+      });
+    }
+  });
+  
+  if(validCount===0) pDeg.innerHTML = '<div style="color:var(--ash);font-size:13px;">No verified degrees found.</div>';
+  if(skillsSet.size===0) pSkl.innerHTML = '<div style="color:var(--ash);font-size:13px;">No verified skills found.</div>';
+  
+  skillsSet.forEach(s => {
+    pSkl.innerHTML += `<div style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:#93C5FD; padding:6px 12px; border-radius:99px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px;">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>${s}
+    </div>`;
+  });
+}
+
+// --- 3. SELECTIVE DISCLOSURE & SHARING ---
+
+let currentShareId = null;
+
+window.openShareModal = (id) => {
+  currentShareId = id;
+  const cbDiv = $('shareCheckboxes');
+  cbDiv.innerHTML = '';
+  
+  CLAIM_KEYS.forEach(k => {
+    // Default: Check public/impersonal claims, uncheck sensitive ones
+    const isChecked = (k!=='name' && k!=='sid' && k!=='score') ? 'checked' : '';
+    cbDiv.innerHTML += `
+      <label class="checkbox-item">
+        <input type="checkbox" id="chk_${k}" ${isChecked} onchange="updateScore()">
+        ${CLAIM_DEF[k].label}
+      </label>
+    `;
+  });
+  
+  $('qrResult').style.display = 'none';
+  $('modalShare').classList.add('active');
+  updateScore();
+};
+
+window.updateScore = () => {
+  let score = 0;
+  CLAIM_KEYS.forEach(k => {
+    if(!$(`chk_${k}`).checked) score += CLAIM_DEF[k].weight; // Hiding increases privacy score
+  });
+  const el = $('shareScore');
+  el.textContent = `${score}/100`;
+  el.className = 'val ' + (score > 65 ? 'high' : (score > 35 ? 'med' : 'low'));
+  $('shareScoreText').textContent = score > 65 ? 'Excellent protection.' : (score > 35 ? 'Moderate disclosure.' : 'High personal exposure.');
+};
+
+$('btnGenLink').addEventListener('click', () => {
+  const id = currentShareId;
+  const oc = DB.offChain[id];
+  const chainC = DB.chain.find(c=>c.certId===id);
+  
+  const claimsDisclosed = [];
+  const payload = {
+    certId: id,
+    selected: {},
+    hiddenHashes: {},
+    signature: chainC.signature,
+    nonce: generateId('N') // Anti-replay nonce
+  };
+  
+  CLAIM_KEYS.forEach(k => {
+    if($(`chk_${k}`).checked) {
+      payload.selected[k] = { val: oc.record[k], salt: oc.salts[k] };
+      claimsDisclosed.push(CLAIM_DEF[k].label);
+    } else {
+      payload.hiddenHashes[k] = oc.hashes[k];
+    }
+  });
+  
+  const hrs = parseInt($('shareExpiry').value);
+  const sessionId = generateId('SES');
+  
+  DB.consents[sessionId] = {
+    certId: id,
+    claims: claimsDisclosed.join(', '),
+    expiresAt: Date.now() + (hrs * 60 * 60 * 1000),
+    nonce: payload.nonce,
+    used: false,
+    revoked: false
+  };
+  
+  const payloadStr = JSON.stringify(payload);
+  const verifyUrl = `http://localhost:8080/certix.html?verify=${btoa(payloadStr)}`;
+  
+  $('qrbox').innerHTML = '';
+  new QRCode($('qrbox'), { text: verifyUrl, width: 160, height: 160, colorDark:'#0B1221', colorLight:'#FFF' });
+  $('qrResult').style.display = 'block';
+  
+  // MAGIC AUTO-ROUTE FOR DEMO PURPOSES: 
+  // Simulate the employer scanning the QR code with their phone.
+  $('v_payload').value = payloadStr;
+  
+  logAudit('SHARE_LINK_GENERATED', id, oc.record.name, `Access: ${hrs}h`);
+});
+
+// --- CONSENT CENTER ---
+function renderConsents() {
+  const tb = document.querySelector('#consentTable tbody');
+  tb.innerHTML = '';
+  Object.keys(DB.consents).forEach(sid => {
+    const c = DB.consents[sid];
+    const isExpired = c.expiresAt < Date.now();
+    let status = c.revoked ? badge('revoked') : (isExpired ? badge('expired') : badge('valid'));
+    if(c.revoked) status = `<span style="color:var(--modified)">Revoked</span>`;
+    
+    let action = (c.revoked || isExpired) ? '-' : `<button class="btn btn-danger btn-small" onclick="revokeConsent('${sid}')">Revoke</button>`;
+    
+    tb.innerHTML += `<tr>
+      <td class="mono">${sid}</td>
+      <td class="mono">${c.certId}</td>
+      <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.claims}</td>
+      <td>${new Date(c.expiresAt).toLocaleString()}</td>
+      <td>${status}</td>
+      <td>${action}</td>
+    </tr>`;
+  });
+}
+window.revokeConsent = (sid) => {
+  DB.consents[sid].revoked = true;
+  logAudit('CONSENT_REVOKED', DB.consents[sid].certId, 'Student', `Session ${sid}`);
+  renderConsents();
+  toast('Access Revoked!', 'success');
+};
+
+
+// --- 4. EMPLOYER VERIFIER & AI MATCHING ---
+
+// AI Risk Variables
+let rapidRequests = 0;
+setInterval(() => { rapidRequests = Math.max(0, rapidRequests-1); }, 10000);
+
+$('btnVerify').addEventListener('click', async () => {
+  const raw = $('v_payload').value;
+  if(!raw) return toast('No payload provided', 'error');
+  
+  // Rate limiting / Suspicious activity AI check
+  rapidRequests++;
+  if(rapidRequests > 4) {
+    logAudit('SUSPICIOUS_ACTIVITY', 'UNKNOWN', 'Verifier', 'Rapid verification velocity detected', 'HIGH');
+    return renderVerResult('suspicious', null, null, 'AI ENGINE: High Risk Verification Velocity Detected. IP Blocked temporarily.');
+  }
+  
+  let payload;
+  try { payload = JSON.parse(raw); } catch(e) { return toast('Invalid payload format', 'error'); }
+  
+  const id = payload.certId;
+  const isServerDown = $('empSimOutage').checked;
+  const isOffline = $('empSimOffline').checked;
+  
+  // Anti-Replay Check
+  if(DB.usedNonces.has(payload.nonce)) {
+    logAudit('REPLAY_ATTACK', id, 'Verifier', `Reused nonce ${payload.nonce}`, 'HIGH');
+    return renderVerResult('replay', id, null, 'REPLAY DETECTED: This sharing session challenge has already been used.');
+  }
+  DB.usedNonces.add(payload.nonce);
+  
+  // Consent Check (Simulating backend check of session)
+  // In a real decentralized setup, revocation might be handled via a DID registry or smart contract registry.
+  let isRevokedConsent = false;
+  Object.values(DB.consents).forEach(c => {
+    if(c.nonce === payload.nonce && c.revoked) isRevokedConsent = true;
+  });
+  if(isRevokedConsent) {
+    logAudit('VERIFY_ATTEMPT_REVOKED', id, 'Verifier', 'Tried to use revoked link');
+    return renderVerResult('consent_revoked', id, null, 'ACCESS DENIED: The student has revoked consent for this sharing session.');
+  }
+
+  // Blockchain Ledger Lookup
+  let chainRec = null;
+  if(!isOffline) {
+    chainRec = DB.chain.find(c => c.certId === id);
+    if(!chainRec) return renderVerResult('notfound', id);
+  } else {
+    // OFFLINE MODE: We don't have chainRec, we must trust the payload signature blindly.
+    // In reality, the payload would contain the issuer's public key (or it's cached locally),
+    // and the rootHash. We will simulate having a cached public key.
+  }
+
+  // Reconstruct Root Hash from selective disclosure
+  let combined = "";
+  for(let k of CLAIM_KEYS) {
+    if(payload.selected[k]) {
+      combined += await sha256(payload.selected[k].val + payload.selected[k].salt);
+    } else if(payload.hiddenHashes[k]) {
+      combined += payload.hiddenHashes[k];
+    } else {
+      return renderVerResult('modified', id, chainRec, 'Data Integrity Error: Missing hash chunks.');
+    }
+  }
+  const reconstructedHash = await sha256(combined);
+
+  // Verification Logic
+  let sigOk = false;
+  let keyToUse = await crypto.subtle.importKey('jwk', uniJwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']);
+  try {
+    const hashToVerify = isOffline ? reconstructedHash : chainRec.rootHash;
+    sigOk = await crypto.subtle.verify({name:'ECDSA', hash:'SHA-256'}, keyToUse, b64ToBuf(payload.signature), enc.encode(hashToVerify));
+  } catch(e) { sigOk = false; }
+
+  if(!sigOk || (!isOffline && chainRec.rootHash !== reconstructedHash)) {
+    logAudit('VERIFICATION_FAILED', id, 'Verifier', 'Signature or Hash mismatch', 'HIGH');
+    return renderVerResult('modified', id, chainRec, 'DOCUMENT MODIFIED: Cryptographic proof failed.');
+  }
+
+  if(isOffline) {
+    logAudit('OFFLINE_VERIFIED', id, 'Verifier');
+    return renderVerResult('offline', id, null, 'OFFLINE VERIFIED: ECDSA signature is valid. Blockchain status cannot be checked without network.', payload.selected);
+  }
+
+  // Check Expiry
+  if(chainRec.expiry && chainRec.expiry < Date.now()) {
+    return renderVerResult('expired', id, chainRec, 'CREDENTIAL EXPIRED: The credential is authentic but its validity period has ended.');
+  }
+
+  // Check Statuses
+  if(chainRec.status === 'revoked') return renderVerResult('revoked', id, chainRec, 'REVOKED: The issuer withdrew this credential.');
+  if(chainRec.status === 'superseded') return renderVerResult('superseded', id, chainRec, `SUPERSEDED: A newer version exists (${chainRec.supersededBy}).`);
+
+  logAudit(isServerDown ? 'EMERGENCY_VERIFIED' : 'VERIFIED', id, 'Verifier', 'Successful verification');
+  
+  if(isServerDown) {
+    renderVerResult('emergency', id, chainRec, 'EMERGENCY VERIFIED: University Server is Unavailable, but credential cryptographically verified via Blockchain.', payload.selected);
+  } else {
+    renderVerResult('valid', id, chainRec, 'VALID: Authenticity confirmed via Blockchain.', payload.selected);
+  }
+});
+
+function renderVerResult(status, id, chainRec, msg, claims) {
+  const r = $('verResultArea');
+  DB.stats.verifications++;
+  syncState();
+  
+  let claimsHtml = '';
+  if(claims) {
+    claimsHtml += `<div style="margin-top:20px; border-top:1px solid var(--hairline); padding-top:16px;">
+      <h4 style="margin:0 0 12px; font-size:12px; color:var(--ash); text-transform:uppercase;">Verified Claims</h4>`;
+    CLAIM_KEYS.forEach(k => {
+      if(claims[k]) claimsHtml += `<div class="keyfact"><span class="k" style="color:var(--valid)">✓ ${CLAIM_DEF[k].label}</span><span class="v">${claims[k].val}</span></div>`;
+      else claimsHtml += `<div class="keyfact"><span class="k">🔒 ${CLAIM_DEF[k].label}</span><span class="v" style="color:var(--ash); font-size:12px;">HIDDEN (Protected)</span></div>`;
+    });
+    claimsHtml += `</div>`;
+  }
+
+  let icon = '<circle cx="25" cy="25" r="23" fill="var(--valid)"/><path d="M15 25l7 7 15-15" stroke="#fff" stroke-width="3" fill="none"/>';
+  if(status==='modified' || status==='revoked' || status==='replay' || status==='consent_revoked' || status==='suspicious') {
+    icon = '<circle cx="25" cy="25" r="23" fill="var(--modified)"/><path d="M17 17l16 16M33 17l-16 16" stroke="#fff" stroke-width="3"/>';
+  } else if (status==='notfound' || status==='superseded' || status==='expired') {
+    icon = '<circle cx="25" cy="25" r="23" fill="var(--superseded)"/><circle cx="25" cy="25" r="1.5" fill="white"/><path d="M25 15v14" stroke="white" stroke-width="3" stroke-linecap="round"/>';
+  } else if (status==='offline' || status==='emergency') {
+    icon = '<circle cx="25" cy="25" r="23" fill="none" stroke="var(--valid)" stroke-width="2"/><path d="M15 25l7 7 15-15" stroke="var(--valid)" stroke-width="3" fill="none"/>';
+  }
+
+  r.innerHTML = `
+    <div class="card" style="border-color:${status==='valid'||status==='emergency'||status==='offline'?'var(--valid)':'var(--modified)'}; background:rgba(0,0,0,0.2);">
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+        <svg viewBox="0 0 50 50" width="50" height="50">${icon}</svg>
+        <div>
+          <div class="badge ${status}">${status.toUpperCase()}</div>
+          <div style="margin-top:6px; font-size:14px; font-weight:500;">${msg}</div>
+        </div>
+      </div>
+      ${id ? `<div class="keyfact"><span class="k">Credential ID</span><span class="v mono">${id}</span></div>` : ''}
+      ${chainRec ? `<div class="keyfact"><span class="k">Issuer Registry</span><span class="v">${chainRec.issuer} <span class="badge valid">AUTHORIZED</span></span></div>` : ''}
+      ${claimsHtml}
+    </div>
+  `;
+}
+
+// Tamper button
+$('btnTamper').addEventListener('click', () => {
+  try {
+    const obj = JSON.parse($('v_payload').value);
+    if(obj.selected && obj.selected.name) obj.selected.name.val = 'Hacker Joe';
+    else if(obj.hiddenHashes && Object.keys(obj.hiddenHashes).length > 0) {
+       const k = Object.keys(obj.hiddenHashes)[0];
+       obj.hiddenHashes[k] = '0000' + obj.hiddenHashes[k].slice(4);
+    }
+    $('v_payload').value = JSON.stringify(obj);
+    toast('Payload mathematically tampered.', 'info');
+  } catch(e) { toast('Invalid payload','error'); }
+});
+// Replay button
+$('btnReplay').addEventListener('click', () => {
+  toast('Simulating... clicking Verify will now trigger Replay check if nonce was already verified.', 'info');
+  $('btnVerify').click();
+});
+
+// Match engine
+$('btnMatch').addEventListener('click', () => {
+  const reqSkills = $('m_skills').value.toLowerCase().split(',').map(s=>s.trim());
+  const reqCgpa = parseFloat($('m_cgpa').value) || 0;
+  
+  let payload;
+  try { payload = JSON.parse($('m_payload').value); } catch(e) { return toast('Paste Candidate Payload to evaluate','error'); }
+  
+  const sel = payload.selected;
+  if(!sel) return toast('Invalid Candidate Payload', 'error');
+  
+  const candSkills = sel.skills ? sel.skills.val.toLowerCase() : '';
+  const candCgpa = sel.score ? parseFloat(sel.score.val) : 0;
+  const candEligible = sel.eligibility ? (sel.eligibility.val === 'TRUE') : false;
+  
+  let matchScore = 0;
+  let totalChecks = reqSkills.length + 1; // skills + cgpa
+  
+  let resHtml = `<div class="card"><div class="card-header"><h3>Candidate Eligibility Result</h3></div>`;
+  
+  // Check Skills
+  reqSkills.forEach(s => {
+    if(s && candSkills.includes(s)) { matchScore++; resHtml += `<div class="keyfact"><span class="k">${s}</span><span class="v" style="color:var(--valid)">✓ VERIFIED</span></div>`; }
+    else if(s) { resHtml += `<div class="keyfact"><span class="k">${s}</span><span class="v" style="color:var(--modified)">✗ NOT FOUND OR HIDDEN</span></div>`; }
+  });
+  
+  // Check CGPA
+  if(candCgpa >= reqCgpa || (reqCgpa <= 8.0 && candEligible)) {
+    matchScore++;
+    resHtml += `<div class="keyfact"><span class="k">Score requirement</span><span class="v" style="color:var(--valid)">✓ MET</span></div>`;
+  } else {
+    resHtml += `<div class="keyfact"><span class="k">Score requirement</span><span class="v" style="color:var(--modified)">✗ NOT MET OR HIDDEN</span></div>`;
+  }
+  
+  const pct = Math.round((matchScore / totalChecks) * 100);
+  resHtml += `
+    <div style="margin-top:20px; text-align:center;">
+      <div style="font-size:32px; font-weight:700; color:${pct===100?'var(--valid)':'var(--superseded)'}">${pct}% MATCH</div>
+      <div class="badge ${pct===100?'valid':'modified'}" style="margin-top:8px;">${pct===100?'ELIGIBLE':'REVIEW REQUIRED'}</div>
+    </div>
+  </div>`;
+  
+  $('matchResultArea').innerHTML = resHtml;
+  logAudit('AI_MATCHING_EVAL', payload.certId, 'Employer', `Match result: ${pct}%`);
+});
+
+
+// --- 5. ADMIN SECURITY CENTER ---
+
+function renderAdmin() {
+  $('stat-adm-ver').textContent = DB.stats.verifications;
+  $('stat-adm-anom').textContent = DB.stats.anomalies;
+  
+  const tb = document.querySelector('#auditTable tbody');
+  if(!tb) return;
+  tb.innerHTML = '';
+  [...DB.audit].reverse().forEach(a => {
+    const rColor = a.risk==='HIGH' ? 'var(--modified)' : (a.risk==='MEDIUM' ? 'var(--superseded)' : 'var(--ash)');
+    tb.innerHTML += `<tr>
+      <td>${new Date(a.ts).toLocaleTimeString()}</td>
+      <td style="font-weight:600;">${a.event}</td>
+      <td class="mono">${a.certId}</td>
+      <td>${a.actor}<br><span style="font-size:11px; color:var(--ash);">${a.detail}</span></td>
+      <td style="color:${rColor}; font-weight:600;">${a.risk}</td>
+    </tr>`;
+  });
+}
+
+
+// --- BOOTSTRAP ---
+(async function boot() {
+  await initCrypto();
+  await initSupabase();
+  
+  // Render active dashboard if data loaded
+  renderUniDashboard();
+  renderWallet();
+  renderPassport();
+  renderConsents();
+  renderAdmin();
+  
+  // Read URL params for auto-routing (Simulating QR scan)
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('verify')) {
+    const b64 = params.get('verify');
+    try {
+      const payloadStr = atob(b64);
+      $('v_payload').value = payloadStr;
+      document.querySelector('[data-target="view-emp-verify"]').click();
+      toast('Payload loaded from URL', 'success');
+    } catch(e) { toast('Invalid URL payload', 'error'); }
+  }
+})();
+
+</script>
+</body>
+</html>
