@@ -1,14 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRole } from '@/lib/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, LogOut, Wallet, Building2, SearchCheck, ShieldAlert } from 'lucide-react';
+import { ShieldCheck, LogOut, Wallet, Building2, SearchCheck, ShieldAlert, Database } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { DatabaseModal } from './DatabaseModal';
+import { supabaseManager } from '@/lib/supabaseClient';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { role, setRole } = useRole();
   const pathname = usePathname();
+  const [isDbModalOpen, setIsDbModalOpen] = useState(false);
+  const [dbStatus, setDbStatus] = useState<{ isConnected: boolean; url: string | null }>({ isConnected: false, url: null });
+
+  useEffect(() => {
+    setDbStatus(supabaseManager.getStatus());
+  }, []);
+
+  const refreshDbStatus = () => {
+    setDbStatus(supabaseManager.getStatus());
+  };
 
   if (role === 'HOME') {
     return <>{children}</>;
@@ -64,11 +77,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Demo Mode
-            </div>
+          <div className="flex items-center gap-3">
+            {/* Database Status Button */}
+            <button
+              onClick={() => setIsDbModalOpen(true)}
+              className="flex items-center gap-2 text-xs text-slate-300 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+              title="Click to configure Cloud Database"
+            >
+              <Database className={`w-3.5 h-3.5 ${dbStatus.isConnected ? 'text-green-400' : 'text-slate-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${dbStatus.isConnected ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></span>
+              <span>{dbStatus.isConnected ? 'Supabase Sync Active' : 'DB: Local Storage'}</span>
+            </button>
+
             <Button variant="ghost" size="sm" onClick={() => setRole('HOME')} className="text-slate-400 hover:text-white">
               <LogOut className="w-4 h-4 mr-2" />
               Switch Role
@@ -80,6 +100,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 container mx-auto px-4 py-8">
         {children}
       </main>
+
+      <DatabaseModal
+        open={isDbModalOpen}
+        onOpenChange={setIsDbModalOpen}
+        onStatusChange={refreshDbStatus}
+      />
     </div>
   );
 }

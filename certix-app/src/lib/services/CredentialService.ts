@@ -2,18 +2,18 @@ import { WalletCredential, StudentRecord } from '@/types';
 import { CryptoService } from './CryptoService';
 import { BlockchainService } from './BlockchainService';
 import { LocalStorageRepository } from '../repositories/LocalStorageRepository';
+import { DatabaseService } from './DatabaseService';
 
 export class CredentialService {
   private walletRepo = new LocalStorageRepository<WalletCredential>('certix_wallet');
   private blockchain = new BlockchainService();
+  private dbService = new DatabaseService();
   
   // Singleton for demo issuer key
   private async getIssuerKey(): Promise<CryptoKeyPair> {
     if (typeof window === 'undefined') throw new Error('Client only');
     const stored = localStorage.getItem('certix_issuer_key');
     if (stored) {
-       // In a real app we wouldn't store private keys in localStorage unencrypted.
-       // We'll generate one if not exists and keep it in memory for demo
        if ((window as any).__demoKeyPair) return (window as any).__demoKeyPair;
     }
     const keyPair = await CryptoService.generateKeyPair();
@@ -63,6 +63,10 @@ export class CredentialService {
     };
 
     this.walletRepo.add(credential);
+
+    // Sync to remote Supabase if connected
+    this.dbService.syncToCloud().catch(() => {});
+
     return credential;
   }
 
@@ -77,5 +81,6 @@ export class CredentialService {
   revoke(certId: string): void {
     this.blockchain.updateStatus(certId, 'REVOKED');
     this.walletRepo.update((c) => c.id === certId, (c) => ({ ...c, status: 'REVOKED' }));
+    this.dbService.syncToCloud().catch(() => {});
   }
 }
