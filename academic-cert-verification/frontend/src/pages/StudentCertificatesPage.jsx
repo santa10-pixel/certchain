@@ -145,15 +145,14 @@ export default function StudentCertificatesPage() {
                   {/* Actions */}
                   <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <a
-                        href={certificateService.getDownloadUrl(cert.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => certificateService.downloadPDF(cert.id || cert)}
+                        className="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                         title="Download Certificate PDF"
                       >
                         <Download className="w-3.5 h-3.5" /> PDF
-                      </a>
+                      </button>
 
                       <button
                         onClick={() => handleCopy(cert.id)}

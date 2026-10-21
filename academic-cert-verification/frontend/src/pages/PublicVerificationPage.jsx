@@ -244,14 +244,13 @@ export default function PublicVerificationPage() {
             {/* Download Original if available and valid */}
             {details.certificateId && status === "VALID" && (
               <div className="pt-2 flex justify-end">
-                <a
-                  href={certificateService.getDownloadUrl(details.certificateId)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => certificateService.downloadPDF(details.certificateId)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" /> Download Authentic PDF Copy
-                </a>
+                </button>
               </div>
             )}
           </div>

@@ -164,15 +164,14 @@ export default function CertificateListPage() {
                       >
                         Details
                       </Link>
-                      <a
-                        href={certificateService.getDownloadUrl(cert.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => certificateService.downloadPDF(cert.id || cert)}
+                        className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 text-xs font-medium inline-flex items-center gap-1 transition-colors cursor-pointer"
                         title="Download official PDF"
                       >
                         <Download className="w-3.5 h-3.5" /> PDF
-                      </a>
+                      </button>
                       {cert.status === "VALID" && (
                         <button
                           onClick={() => handleRevoke(cert.id)}

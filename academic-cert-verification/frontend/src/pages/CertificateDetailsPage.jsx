@@ -205,14 +205,13 @@ export default function CertificateDetailsPage() {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800">
           <div className="flex flex-wrap gap-3">
-            <a
-              href={certificateService.getDownloadUrl(cert.id)}
-              target="_blank"
-              rel="noreferrer"
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md transition-all"
+            <button
+              type="button"
+              onClick={() => certificateService.downloadPDF(cert.id || cert)}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" /> Download Official PDF
-            </a>
+            </button>
 
             <button
               onClick={handleCopyLink}

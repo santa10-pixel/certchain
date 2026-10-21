@@ -164,10 +164,10 @@ export default function IssueCertificatePage() {
 
             {/* QR Code and Download Actions */}
             <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-900 rounded-xl border border-slate-800">
-              {successResult.qrDataUrl && (
+              {(successResult.qrDataUrl || successResult.qr_code) && (
                 <div className="text-center shrink-0">
                   <img
-                    src={successResult.qrDataUrl}
+                    src={successResult.qrDataUrl || successResult.qr_code}
                     alt="Certificate QR Code"
                     className="w-28 h-28 rounded-lg bg-white p-1 shadow-md mx-auto"
                   />
@@ -179,14 +179,13 @@ export default function IssueCertificatePage() {
                   The generated certificate PDF contains official university seal, signatures, and this QR code embedded for instant scan-to-verify functionality.
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href={certificateService.getDownloadUrl(successResult.id)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md transition-all"
+                  <button
+                    type="button"
+                    onClick={() => certificateService.downloadPDF(successResult.id || successResult)}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md transition-all cursor-pointer"
                   >
                     <Download className="w-4 h-4" /> Download Official PDF Certificate
-                  </a>
+                  </button>
                   <Link
                     to={`/verify/${encodeURIComponent(successResult.id)}`}
                     className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors border border-slate-700"

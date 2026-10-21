@@ -318,4 +318,54 @@ export class ClientCertEngine {
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   }
+
+  /**
+   * Builds PDF Blob for a certificate on demand
+   */
+  static async getCertificatePDFBlob(cert) {
+    if (!cert) return null;
+    let qrDataUrl = cert.qr_code || cert.qrDataUrl;
+    if (!qrDataUrl) {
+      const hostOrigin = typeof window !== "undefined" ? window.location.origin : "https://certchain.vercel.app";
+      const qrUrl = `${hostOrigin}/verify/${encodeURIComponent(cert.id || cert.certificate_number)}`;
+      qrDataUrl = await ClientCertEngine.generateQRCode(qrUrl);
+    }
+    const pdfBytes = await ClientCertEngine.buildCertificatePDF(cert, qrDataUrl);
+    return new Blob([pdfBytes], { type: "application/pdf" });
+  }
+
+  /**
+   * Universally triggers a direct browser download of the certificate PDF file
+   */
+  static async downloadCertificatePDF(certOrId) {
+    try {
+      let cert = typeof certOrId === "object" && certOrId !== null ? certOrId : null;
+      if (!cert) {
+        const certs = ClientCertEngine.getStorage();
+        cert = certs.find((c) => c.id === certOrId || c.certificate_number === certOrId);
+      }
+      if (!cert) {
+        alert("Certificate record could not be found to download.");
+        return;
+      }
+
+      const blob = await ClientCertEngine.getCertificatePDFBlob(cert);
+      const url = URL.createObjectURL(blob);
+      const filename = `Academic_Certificate_${cert.certificate_number || cert.id}.pdf`;
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 500);
+    } catch (err) {
+      console.error("Failed to generate and download PDF:", err);
+      alert("Failed to download certificate PDF: " + err.message);
+    }
+  }
 }
